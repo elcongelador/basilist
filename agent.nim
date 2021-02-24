@@ -16,7 +16,10 @@ type
 proc serverCallback(req: Request) {.async.} =
   let res = dbclient.getListStr("couch::test::authors::authors-view")
   echo(res)
-  await req.respond(Http200, res)
+  let headers = {
+    "Content-type": "application/json; charset=utf-8"
+  }
+  await req.respond(Http200, res, headers.newHttpHeaders(true))
 
 proc newAgent*(): Agent =
   var ag = Agent()
