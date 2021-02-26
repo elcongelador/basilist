@@ -1,11 +1,6 @@
 import asynchttpserver, asyncdispatch
 import db, httpd
 
-const CONF_DB_SERVERADR = "http://188.166.48.211:5984"
-const CONF_DB_USER = "herbert"
-const CONF_DB_PASSWORD = "spearmint1_fox"
-const CONF_SERVER_PORT = 8080
-
 var dbd {.threadvar.}: DBDirector
 
 type
