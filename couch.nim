@@ -29,7 +29,7 @@ proc getDocument*(client: CouchClient, db: string, ddoc: string, view: string): 
   let response = client.getDocumentStr(db, ddoc, view)
   result = parseJson(response)
 
-when isMainModule:
-  let client = newCouchClient("http://188.166.48.211:5984", "herbert", "spearmint1_fox")
-  let res = client.getDocument("test", "authors", "authors-view")
-  echo(res)
+#when isMainModule:
+  #let client = newCouchClient("http://x.x.x.x:5984", "user", "password")
+  #let res = client.getDocument("test", "authors", "authors-view")
+  #echo(res)
