@@ -6,17 +6,17 @@ const CONF_DB_USER = "herbert"
 const CONF_DB_PASSWORD = "spearmint1_fox"
 const CONF_SERVER_PORT = 8080
 
-var dbclient {.threadvar.}: DBClient
+var dbd {.threadvar.}: DBDirector
 
 type
   Agent* = ref object
-    dbclient: DBClient
+    dbd: DBDirector
     server*: HttpServer
 
 proc serverCallback(req: Request) {.async.} =
-  let src = parseURL(req.url.path)
-  echo(src)
-  let res = dbclient.getCouchListStr("couch::test::authors::authors-view")
+  let list = parseURL(req.url.path)
+  echo(list)
+  let res = dbd.getListStr(list.db, list.list)
   echo(res)
   let headers = {
     "Content-type": "application/json; charset=utf-8"
@@ -25,8 +25,8 @@ proc serverCallback(req: Request) {.async.} =
 
 proc newAgent*(): Agent =
   var ag = Agent()
-  dbclient = newDBClient(CONF_DB_SERVERADR, CONF_DB_USER, CONF_DB_PASSWORD)
-  ag.dbclient = dbclient
+  dbd = newDBDirector()
+  dbd.registerCouchDB("test", CONF_DB_SERVERADR, CONF_DB_USER, CONF_DB_PASSWORD)
   ag.server = newHttpServer(CONF_SERVER_PORT, serverCallback)
   result = ag
 
