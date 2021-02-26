@@ -11,7 +11,7 @@ agt.server.serve()
 
 
 #var dbclient {.threadvar.}: DBClient
-#dbclient = newDBClient("http://188.166.48.211:5984", "herbert", "spearmint1_fox")
+#dbclient = newDBClient("http://x.x.x.x:5984", "user", "password")
 #
 #let res = dbclient.getList("couch::test::authors::authors-view")
 #echo(res)
