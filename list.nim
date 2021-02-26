@@ -16,7 +16,7 @@ type
 
 type
   ListType* = enum
-    ltCouchList, ldPostgresList
+    ltCouchList, ltPostgresList
 
 type
   ListDirector* = ref object
@@ -34,7 +34,7 @@ proc addList*(ld: ListDirector, ltype: ListType, dbname: string, listname: strin
       nlist = CouchList()
       CouchList(nlist).srcdoc = listname
       Couchlist(nlist).srcview = listname & "-view"
-    of ldPostgresList:
+    of ltPostgresList:
       nlist = PostgresList()
       PostgresList(nlist).srctable = listname
 
