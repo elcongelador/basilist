@@ -16,7 +16,7 @@ type
 proc serverCallback(req: Request) {.async.} =
   let src = parseURL(req.url.path)
   echo(src)
-  let res = dbclient.getListStr("couch::test::authors::authors-view")
+  let res = dbclient.getCouchListStr("couch::test::authors::authors-view")
   echo(res)
   let headers = {
     "Content-type": "application/json; charset=utf-8"

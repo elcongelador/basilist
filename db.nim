@@ -11,8 +11,8 @@ proc newDBClient*(serveradr: string, user: string, password: string): DBClient =
   result = client
 
 #list parameter example: couch::test::authors::authors-view
-proc getList*(client: DBClient, list: string): JsonNode =
+proc getCouchList*(client: DBClient, list: string): JsonNode =
   result = client.couch.getDocument("test", "authors", "authors-view")
 
-proc getListStr*(client: DBClient, list: string): string =
+proc getCouchListStr*(client: DBClient, list: string): string =
   result = client.couch.getDocumentStr("test", "authors", "authors-view")
