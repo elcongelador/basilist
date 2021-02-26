@@ -32,7 +32,7 @@ proc addList*(ld: ListDirector, ltype: ListType, dbname: string, listname: strin
   case ltype:
     of ltCouchList:
       nlist = CouchList()
-      CouchList(nlist).srcdoc = dbname
+      CouchList(nlist).srcdoc = listname
       Couchlist(nlist).srcview = listname & "-view"
     of ldPostgresList:
       nlist = PostgresList()
@@ -40,4 +40,17 @@ proc addList*(ld: ListDirector, ltype: ListType, dbname: string, listname: strin
 
   nlist.name = listname
   nlist.srcdb = dbname
-  ld.lists[dbname & listname] = nlist
+  ld.lists[dbname & "__" & listname] = nlist
+
+proc getList*(ld: ListDirector, dbname: string, listname: string): BList =
+  result = ld.lists[dbname & "__" & listname]
+
+when isMainModule:
+  let ld = newListDirector()
+  ld.addList(ltCouchList, "somedb", "testlist")
+  let alist = ld.getList("somedb", "testlist")
+
+  echo(alist.srcdb)
+
+  if(alist of CouchList):
+    echo(CouchList(alist).srcdoc)
