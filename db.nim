@@ -1,18 +1,42 @@
-import json
+import json, tables
 import couch
 
 type
-  DBClient* = ref object
-    couch: CouchClient
+  BDatabase* = ref object of RootObj #of RootObj needed for inheritance
+    name: string
 
-proc newDBClient*(serveradr: string, user: string, password: string): DBClient =
-  var client = DBClient()
-  client.couch = newCouchClient(serveradr, user, password)
-  result = client
+  CouchDatabase* = ref object of BDatabase
+    client: CouchClient
 
-#list parameter example: couch::test::authors::authors-view
-proc getCouchList*(client: DBClient, list: string): JsonNode =
-  result = client.couch.getDocument("test", "authors", "authors-view")
+  PostgresDatabase* = ref object of BDatabase
+    serveradr: string
 
-proc getCouchListStr*(client: DBClient, list: string): string =
-  result = client.couch.getDocumentStr("test", "authors", "authors-view")
+type
+  DBDirector* = ref object
+    dbs: Table[string, BDatabase]
+
+proc newDBDirector*(): DBDirector =
+  var dbd = DBDirector()
+  result = dbd
+
+proc registerCouchDB*(dbd: DBDirector, name: string, serveradr: string, user: string, password: string) =
+  var ndb: BDatabase
+  ndb = CouchDatabase()
+  ndb.name = name
+  CouchDatabase(ndb).client = newCouchClient(serveradr, user, password)
+  dbd.dbs[name] = ndb
+
+proc getDB*(dbd: DBDirector, dbname: string): BDatabase =
+  result = dbd.dbs[dbname]
+
+proc getListStr*(dbd: DBDirector, dbname: string, listname: string): string =
+  let db = getDB(dbd, dbname)
+
+  if(db of CouchDatabase):
+    result = CouchDatabase(db).client.getDocumentStr(dbname, listname, listname & "-view")
+
+proc getList*(dbd: DBDirector, dbname: string, listname: string): JsonNode =
+  let db = getDB(dbd, dbname)
+
+  if(db of CouchDatabase):
+    result = CouchDatabase(db).client.getDocument(dbname, listname, listname & "-view")
