@@ -1,5 +1,5 @@
 import asynchttpserver, asyncdispatch
-import db, httpd
+import config, db, httpd
 
 var dbd {.threadvar.}: DBDirector
 
