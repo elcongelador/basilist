@@ -21,11 +21,12 @@ proc serve*(server: HttpServer) =
   #waitFor server.aserver.serve(Port(server.port), serveCallback)
   waitFor server.aserver.serve(Port(server.port), server.cb)
 
-proc parseURL*(url: string): auto =
+func parseURL*(url: string): auto =
   let parts = split(url, '/')
 
   if(len(parts) < 3 or len(parts[0]) > 0 or len(parts[1]) < 1 or len(parts[2]) < 1):
     #throw error
-    echo("ERROR: URL does not conform to /dbname/listname")
+    #echo("ERROR: URL does not conform to /dbname/listname")
+    discard
 
   result = (db: parts[1], list: parts[2])
