@@ -1,4 +1,4 @@
-import json, tables
+import json, tables, asyncdispatch
 import couch
 
 type
@@ -29,14 +29,14 @@ proc registerCouchDB*(dbd: DBDirector, name: string, serveradr: string, user: st
 proc getDB*(dbd: DBDirector, dbname: string): BDatabase =
   result = dbd.dbs[dbname]
 
-proc getListStr*(dbd: DBDirector, dbname: string, listname: string): string =
+proc getListStr*(dbd: DBDirector, dbname: string, listname: string): Future[string]  {.async.} =
   let db = getDB(dbd, dbname)
 
   if(db of CouchDatabase):
-    result = CouchDatabase(db).client.getDocumentStr(dbname, listname, listname & "-view")
+    result = await CouchDatabase(db).client.getDocumentStr(dbname, listname, listname & "-view")
 
-proc getList*(dbd: DBDirector, dbname: string, listname: string): JsonNode =
+proc getList*(dbd: DBDirector, dbname: string, listname: string): Future[JsonNode] {.async.} =
   let db = getDB(dbd, dbname)
 
   if(db of CouchDatabase):
-    result = CouchDatabase(db).client.getDocument(dbname, listname, listname & "-view")
+    result = await CouchDatabase(db).client.getDocument(dbname, listname, listname & "-view")
