@@ -11,7 +11,7 @@ type
 proc serverCallback(req: Request) {.async.} =
   let repath = parseURL(req.url.path)
   echo(repath)
-  let res = await dbd.queryList(repath.db, repath.list)
+  let res = await dbd.query(repath.db, repath.list)
   echo(res)
   let headers = {
     "Content-type": "application/json; charset=utf-8"

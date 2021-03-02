@@ -38,13 +38,13 @@ proc registerList*(db: CouchDatabase, name: string, document: string, view: stri
   var nlist = newCouchList(document, view)
   db.lists[name] = nlist
 
-proc queryList*(db: CouchDatabase, listname: string): Future[string] {.async.} =
+proc query*(db: CouchDatabase, listname: string): Future[string] {.async.} =
   let list = db.getListObj(listname)
   result = await db.client.getDocumentStr(db.name, CouchList(list).srcdoc, CouchList(list).srcview)
 
-proc queryList*(dbd: DBDirector, dbname: string, listname: string): Future[string]  {.async.} =
+proc query*(dbd: DBDirector, dbname: string, listname: string): Future[string]  {.async.} =
   let db = dbd.getDBObj(dbname)
 
   if(db of CouchDatabase):
-    var res = await CouchDatabase(db).queryList(listname)
+    var res = await CouchDatabase(db).query(listname)
     result = res
