@@ -20,3 +20,8 @@ proc newCouchList*(document: string, view: string): CouchList =
   cl.srcview = view
   cl.cache = initTable[string, JsonNode]()
   result = cl
+
+proc cacheIt*(list: CouchList, jsonData: JsonNode) =
+  for row in jsonData["rows"]:
+    let key = row["id"].getStr()
+    list.cache[key] = row["value"]
