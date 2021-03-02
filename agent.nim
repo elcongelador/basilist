@@ -9,9 +9,9 @@ type
     server*: HttpServer
 
 proc serverCallback(req: Request) {.async.} =
-  let list = parseURL(req.url.path)
-  echo(list)
-  let res = await dbd.getListStr(list.db, list.list)
+  let repath = parseURL(req.url.path)
+  echo(repath)
+  let res = await dbd.queryList(repath.db, repath.list)
   echo(res)
   let headers = {
     "Content-type": "application/json; charset=utf-8"
@@ -21,7 +21,9 @@ proc serverCallback(req: Request) {.async.} =
 proc newAgent*(): Agent =
   var ag = Agent()
   dbd = newDBDirector()
-  dbd.registerCouchDB("test", CONF_DB_SERVERADR, CONF_DB_USER, CONF_DB_PASSWORD)
+  var dbtest = dbd.registerCouchDB("test", CONF_DB_SERVERADR, CONF_DB_USER, CONF_DB_PASSWORD)
+  dbtest.registerList("authors", "authors", "authors-view")
+
   ag.server = newHttpServer(CONF_SERVER_PORT, serverCallback)
   result = ag
 

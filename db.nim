@@ -1,9 +1,10 @@
-import json, tables, asyncdispatch
-import couch
+import tables, asyncdispatch
+import couch, list
 
 type
   BDatabase* = ref object of RootObj #of RootObj needed for inheritance
-    name: string
+    name*: string
+    lists: Table[string, BList]
 
   CouchDatabase* = ref object of BDatabase
     client: CouchClient
@@ -19,24 +20,31 @@ proc newDBDirector*(): DBDirector =
   var dbd = DBDirector()
   result = dbd
 
-proc registerCouchDB*(dbd: DBDirector, name: string, serveradr: string, user: string, password: string) =
-  var ndb: BDatabase
-  ndb = CouchDatabase()
-  ndb.name = name
-  CouchDatabase(ndb).client = newCouchClient(serveradr, user, password)
-  dbd.dbs[name] = ndb
-
-proc getDB*(dbd: DBDirector, dbname: string): BDatabase =
+proc getDBObj(dbd: DBDirector, dbname: string): BDatabase =
   result = dbd.dbs[dbname]
 
-proc getListStr*(dbd: DBDirector, dbname: string, listname: string): Future[string]  {.async.} =
-  let db = getDB(dbd, dbname)
+proc registerCouchDB*(dbd: DBDirector, name: string, serveradr: string, user: string, password: string): CouchDatabase =
+  var ndb = CouchDatabase()
+  ndb.name = name
+  ndb.lists = initTable[string, BList]()
+  ndb.client = newCouchClient(serveradr, user, password)
+  dbd.dbs[name] = ndb
+  result = ndb
+
+proc getListObj(db: BDatabase, name: string): BList =
+  result = db.lists[name]
+
+proc registerList*(db: CouchDatabase, name: string, document: string, view: string) =
+  var nlist = newCouchList(document, view)
+  db.lists[name] = nlist
+
+proc queryList*(db: CouchDatabase, listname: string): Future[string] {.async.} =
+  let list = db.getListObj(listname)
+  result = await db.client.getDocumentStr(db.name, CouchList(list).srcdoc, CouchList(list).srcview)
+
+proc queryList*(dbd: DBDirector, dbname: string, listname: string): Future[string]  {.async.} =
+  let db = dbd.getDBObj(dbname)
 
   if(db of CouchDatabase):
-    result = await CouchDatabase(db).client.getDocumentStr(dbname, listname, listname & "-view")
-
-proc getList*(dbd: DBDirector, dbname: string, listname: string): Future[JsonNode] {.async.} =
-  let db = getDB(dbd, dbname)
-
-  if(db of CouchDatabase):
-    result = await CouchDatabase(db).client.getDocument(dbname, listname, listname & "-view")
+    var res = await CouchDatabase(db).queryList(listname)
+    result = res
