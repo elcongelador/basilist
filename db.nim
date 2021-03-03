@@ -31,8 +31,12 @@ proc registerCouchDB*(dbd: DBDirector, name: string, serveradr: string, user: st
   dbd.dbs[name] = ndb
   result = ndb
 
-proc getListObj(db: BDatabase, name: string): BList =
-  result = db.lists[name]
+proc getListObj*(dbd: DBDirector, dbname: string, listname: string): BList =
+  let db = dbd.getDBObj(dbname)
+  result = db.lists[listname]
+
+proc getListObj*(db: BDatabase, listname: string): BList =
+  result = db.lists[listname]
 
 proc registerList*(db: CouchDatabase, name: string, document: string, view: string) =
   var nlist = newCouchList(document, view)
@@ -42,9 +46,12 @@ proc query*(db: CouchDatabase, listname: string): Future[string] {.async.} =
   let list = db.getListObj(listname)
   result = await db.client.getDocumentStr(db.name, CouchList(list).srcdoc, CouchList(list).srcview)
 
-proc query*(dbd: DBDirector, dbname: string, listname: string): Future[string]  {.async.} =
+proc query*(dbd: DBDirector, dbname: string, listname: string, storeResult = false): Future[string]  {.async.} =
   let db = dbd.getDBObj(dbname)
 
   if(db of CouchDatabase):
-    var res = await CouchDatabase(db).query(listname)
-    result = res
+    if storeResult:
+      getListObj(db, listname).lastresult = await CouchDatabase(db).query(listname)
+      result = getListObj(db, listname).lastresult
+    else:
+      result = await CouchDatabase(db).query(listname)

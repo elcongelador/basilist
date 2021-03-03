@@ -1,5 +1,5 @@
 import asynchttpserver, asyncdispatch
-import config, db, httpd
+import config, db, httpd, list
 
 var dbd {.threadvar.}: DBDirector
 
@@ -11,18 +11,21 @@ type
 proc serverCallback(req: Request) {.async.} =
   let repath = parseURL(req.url.path)
   echo(repath)
-  let res = await dbd.query(repath.db, repath.list)
+  let res = await dbd.query(repath.db, repath.list, true)
   echo(res)
   let headers = {
     "Content-type": "application/json; charset=utf-8"
   }
   await req.respond(Http200, res, headers.newHttpHeaders(true))
+  dbd.getListObj(repath.db, repath.list).cacheResult()
 
 proc newAgent*(): Agent =
   var ag = Agent()
   dbd = newDBDirector()
   var dbtest = dbd.registerCouchDB("test", CONF_DB_SERVERADR, CONF_DB_USER, CONF_DB_PASSWORD)
   dbtest.registerList("authors", "authors", "authors-view")
+  var dbperf = dbd.registerCouchDB("test_performance", CONF_DB_SERVERADR, CONF_DB_USER, CONF_DB_PASSWORD)
+  dbperf.registerList("persons", "persons", "all")
 
   ag.server = newHttpServer(CONF_SERVER_PORT, serverCallback)
   result = ag

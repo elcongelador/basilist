@@ -1,11 +1,13 @@
 #import json
 import tables, json
+import std/monotimes
 
 type
   BList* = ref object of RootObj #of RootObj needed for inheritance
     name*: string
     #rows: JsonNode 
     cache: Table[string, JsonNode]
+    lastresult*: string
 
   CouchList* = ref object of BList
     srcdoc*: string
@@ -21,7 +23,19 @@ proc newCouchList*(document: string, view: string): CouchList =
   cl.cache = initTable[string, JsonNode]()
   result = cl
 
-proc cacheIt*(list: CouchList, jsonData: JsonNode) =
-  for row in jsonData["rows"]:
+proc cacheResult*(list: CouchList) =
+  let a = getMonoTime()
+
+  var jsonResult = parseJson(list.lastresult)
+  for row in jsonResult["rows"]:
     let key = row["id"].getStr()
     list.cache[key] = row["value"]
+
+  let b = getMonoTime()
+
+  let duration = b - a
+  echo(duration)
+
+proc cacheResult*(list: BList) =
+  if list of CouchList:
+    CouchList(list).cacheResult()
