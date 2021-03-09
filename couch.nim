@@ -1,10 +1,20 @@
-import httpclient, base64, json
+import httpclient, base64
 import asyncdispatch
+#import json
+
+type
+  CouchQueryOptions* = tuple
+    key: string
+    startkey: string
+    endkey: string
 
 type
   CouchClient* = ref object
     httpclient: AsyncHttpClient
     serveradr: string
+
+proc newCouchQueryOptions*(key = "", startkey = "", endkey = ""): CouchQueryOptions =
+  result = (key: key, startkey: startkey, endkey: endkey)
 
 proc newCouchClient*(serveradr: string, user: string, password: string): CouchClient =
   var client = CouchClient()
@@ -14,9 +24,30 @@ proc newCouchClient*(serveradr: string, user: string, password: string): CouchCl
   client.httpclient.headers = newHttpHeaders({ "Authorization": "Basic " & encoded })
   result = client
 
-proc getDocumentStr*(client: CouchClient, db: string, ddoc: string, view: string): Future[string] {.async.} =
+proc strQueryOptions(options: CouchQueryOptions): string =
+  var res: string
+
+  if len(options.key) > 0:
+    res.add("key=" & options.key)
+
+  if len(options.startkey) > 0:
+    if len(res) > 0: res.add("&")
+    res.add("startkey=" & options.startkey)
+
+  if len(options.endkey) > 0:
+    if len(res) > 0: res.add("&")
+    res.add("endkey=" & options.endkey)
+
+  if len(res) > 0:
+    res = "?" & res
+
+  result = res
+
+proc query*(client: CouchClient, db: string, ddoc: string, view: string, options: CouchQueryOptions): Future[string] {.async.} =
   #http://188.166.48.211:5984/test/_design/authors/_view/authors-view
-  let rstr = client.serveradr & "/" & db & "/_design/" & ddoc & "/_view/" & view
+  var rstr = client.serveradr & "/" & db & "/_design/" & ddoc & "/_view/" & view
+  rstr.add(strQueryOptions(options))
+  echo(rstr)
   try:
     result = await client.httpclient.getContent(rstr)
     #NOTE: we have to close the connection here, because if we don't it stays open and then the server might
@@ -26,9 +57,9 @@ proc getDocumentStr*(client: CouchClient, db: string, ddoc: string, view: string
   except ProtocolError:
     echo "ProtocolError!"
 
-proc getDocument*(client: CouchClient, db: string, ddoc: string, view: string): Future[JsonNode] {.async.} =
-  let response = await client.getDocumentStr(db, ddoc, view)
-  result = parseJson(response)
+#proc getDocument*(client: CouchClient, db: string, ddoc: string, view: string): Future[JsonNode] {.async.} =
+#  let response = await client.query(db, ddoc, view)
+#  result = parseJson(response)
 
 #when isMainModule:
   #let client = newCouchClient("http://x.x.x.x:5984", "user", "password")

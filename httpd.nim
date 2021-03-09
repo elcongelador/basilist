@@ -1,5 +1,5 @@
 import asynchttpserver, asyncdispatch
-import strutils
+import strutils, cgi
 
 type
   HttpServer* = ref object
@@ -21,12 +21,25 @@ proc serve*(server: HttpServer) =
   #waitFor server.aserver.serve(Port(server.port), serveCallback)
   waitFor server.aserver.serve(Port(server.port), server.cb)
 
-func parseURL*(url: string): auto =
+func parseURLPath*(url: string): auto =
   let parts = split(url, '/')
 
   if(len(parts) < 3 or len(parts[0]) > 0 or len(parts[1]) < 1 or len(parts[2]) < 1):
-    #throw error
+    #TODO: throw error
     #echo("ERROR: URL does not conform to /dbname/listname")
     discard
 
   result = (db: parts[1], list: parts[2])
+
+func parseURLQuery*(query: string): auto =
+  var key, startkey, endkey: string
+
+  for item in decodeData(query):
+    if(item.key == "key"):
+      key = item.value
+    elif(item.key == "startkey"):
+      startkey = item.value
+    elif(item.key == "endkey"):
+      endkey = item.value
+
+  result = (key: key, startkey: startkey, endkey: endkey)

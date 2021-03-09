@@ -2,6 +2,12 @@ import tables, asyncdispatch
 import couch, list
 
 type
+  QueryOptions* = tuple
+    key: string
+    startkey: string
+    endkey: string
+
+type
   BDatabase* = ref object of RootObj #of RootObj needed for inheritance
     name*: string
     lists: Table[string, BList]
@@ -15,6 +21,9 @@ type
 type
   DBDirector* = ref object
     dbs: Table[string, BDatabase]
+
+proc newQueryOptions*(key = "", startkey = "", endkey = ""): QueryOptions =
+  result = (key: key, startkey: startkey, endkey: endkey)
 
 proc newDBDirector*(): DBDirector =
   var dbd = DBDirector()
@@ -42,16 +51,17 @@ proc registerList*(db: CouchDatabase, name: string, document: string, view: stri
   var nlist = newCouchList(document, view)
   db.lists[name] = nlist
 
-proc query*(db: CouchDatabase, listname: string): Future[string] {.async.} =
+proc query*(db: CouchDatabase, listname: string, options: QueryOptions): Future[string] {.async.} =
   let list = db.getListObj(listname)
-  result = await db.client.getDocumentStr(db.name, CouchList(list).srcdoc, CouchList(list).srcview)
+  result = await db.client.query(db.name, CouchList(list).srcdoc, CouchList(list).srcview, options)
 
-proc query*(dbd: DBDirector, dbname: string, listname: string, storeResult = false): Future[string]  {.async.} =
+proc query*(dbd: DBDirector, dbname: string, listname: string, options: QueryOptions, storeResult = false): Future[string]  {.async.} =
   let db = dbd.getDBObj(dbname)
 
   if(db of CouchDatabase):
+    #let cqo = newCouchQueryOptions(key = options.key, startkey = options.startkey, endkey = options.endkey)
     if storeResult:
-      getListObj(db, listname).lastresult = await CouchDatabase(db).query(listname)
+      getListObj(db, listname).lastresult = await CouchDatabase(db).query(listname, options)
       result = getListObj(db, listname).lastresult
     else:
-      result = await CouchDatabase(db).query(listname)
+      result = await CouchDatabase(db).query(listname, options)

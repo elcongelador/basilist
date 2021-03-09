@@ -25,16 +25,21 @@ proc newCouchList*(document: string, view: string): CouchList =
 
 proc cacheResult*(list: CouchList) =
   let a = getMonoTime()
-
   var jsonResult = parseJson(list.lastresult)
+  let b = getMonoTime()
+  let duration = b - a
+  echo(duration)
+
   for row in jsonResult["rows"]:
     let key = row["id"].getStr()
     list.cache[key] = row["value"]
 
-  let b = getMonoTime()
+  let c = getMonoTime()
 
-  let duration = b - a
-  echo(duration)
+  let duration1 = c - b
+  echo(duration1)
+
+  echo("number of cache rows: " & $(len(list.cache)))
 
 proc cacheResult*(list: BList) =
   if list of CouchList:

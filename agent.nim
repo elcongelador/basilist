@@ -9,10 +9,14 @@ type
     server*: HttpServer
 
 proc serverCallback(req: Request) {.async.} =
-  let repath = parseURL(req.url.path)
+  echo("--- REQUEST ---")
+  let repath = parseURLPath(req.url.path)
+  let opts = parseURLQuery(req.url.query)
   echo(repath)
-  let res = await dbd.query(repath.db, repath.list, true)
-  echo(res)
+  echo(opts)
+  let qopts = newQueryOptions(opts.key, opts.startkey, opts.endkey)
+  let res = await dbd.query(repath.db, repath.list, qopts, true)
+  #echo(res)
   let headers = {
     "Content-type": "application/json; charset=utf-8"
   }
@@ -26,6 +30,8 @@ proc newAgent*(): Agent =
   dbtest.registerList("authors", "authors", "authors-view")
   var dbperf = dbd.registerCouchDB("test_performance", CONF_DB_SERVERADR, CONF_DB_USER, CONF_DB_PASSWORD)
   dbperf.registerList("persons", "persons", "all")
+  dbperf.registerList("persons_name", "persons", "key_name")
+  dbperf.registerList("events", "events", "all")
 
   ag.server = newHttpServer(CONF_SERVER_PORT, serverCallback)
   result = ag
