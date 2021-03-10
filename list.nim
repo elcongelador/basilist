@@ -16,14 +16,18 @@ type
   PostgresList* = ref object of BList
     srctable*: string
 
-proc newCouchList*(document: string, view: string): CouchList =
+proc newCouchList*(name: string, document: string, view: string): CouchList =
   var cl = CouchList()
+  cl.name = name
   cl.srcdoc = document
   cl.srcview = view
   cl.cache = initTable[string, JsonNode]()
   result = cl
 
 proc cacheResult*(list: CouchList) =
+  echo("list.cacheResult: " & list.name)
+  echo("number of cache rows (start): " & $(len(list.cache)))
+
   let a = getMonoTime()
   var jsonResult = parseJson(list.lastresult)
   let b = getMonoTime()
@@ -39,7 +43,7 @@ proc cacheResult*(list: CouchList) =
   let duration1 = c - b
   echo(duration1)
 
-  echo("number of cache rows: " & $(len(list.cache)))
+  echo("number of cache rows (end): " & $(len(list.cache)))
 
 proc cacheResult*(list: BList) =
   if list of CouchList:

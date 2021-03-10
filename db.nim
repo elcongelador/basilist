@@ -47,21 +47,29 @@ proc getListObj*(dbd: DBDirector, dbname: string, listname: string): BList =
 proc getListObj*(db: BDatabase, listname: string): BList =
   result = db.lists[listname]
 
-proc registerList*(db: CouchDatabase, name: string, document: string, view: string) =
-  var nlist = newCouchList(document, view)
-  db.lists[name] = nlist
-
 proc query*(db: CouchDatabase, listname: string, options: QueryOptions): Future[string] {.async.} =
   let list = db.getListObj(listname)
   result = await db.client.query(db.name, CouchList(list).srcdoc, CouchList(list).srcview, options)
 
-proc query*(dbd: DBDirector, dbname: string, listname: string, options: QueryOptions, storeResult = false): Future[string]  {.async.} =
-  let db = dbd.getDBObj(dbname)
-
+proc query*(db: BDatabase, listname: string, options: QueryOptions, storeResult = false): Future[string]  {.async.} =
   if(db of CouchDatabase):
-    #let cqo = newCouchQueryOptions(key = options.key, startkey = options.startkey, endkey = options.endkey)
     if storeResult:
       getListObj(db, listname).lastresult = await CouchDatabase(db).query(listname, options)
       result = getListObj(db, listname).lastresult
     else:
       result = await CouchDatabase(db).query(listname, options)
+
+proc query*(dbd: DBDirector, dbname: string, listname: string, options: QueryOptions, storeResult = false): Future[string]  {.async.} =
+  let db = dbd.getDBObj(dbname)
+  result = await db.query(listname, options, storeResult)
+
+proc cacheList*(db: BDatabase, listname: string) =
+  discard waitFor db.query(listname, newQueryOptions(), true)
+  var list = db.getListObj(listname)
+  list.cacheResult()
+
+proc registerList*(db: CouchDatabase, name: string, document: string, view: string, prefetch = false) =
+  echo("db.registerList: " & name)
+  var nlist = newCouchList(name, document, view)
+  db.lists[name] = nlist
+  if prefetch: db.cacheList(name)

@@ -47,7 +47,7 @@ proc query*(client: CouchClient, db: string, ddoc: string, view: string, options
   #http://188.166.48.211:5984/test/_design/authors/_view/authors-view
   var rstr = client.serveradr & "/" & db & "/_design/" & ddoc & "/_view/" & view
   rstr.add(strQueryOptions(options))
-  echo(rstr)
+  echo("couch.query: " & rstr)
   try:
     result = await client.httpclient.getContent(rstr)
     #NOTE: we have to close the connection here, because if we don't it stays open and then the server might

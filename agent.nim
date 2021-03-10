@@ -26,10 +26,14 @@ proc serverCallback(req: Request) {.async.} =
 proc newAgent*(): Agent =
   var ag = Agent()
   dbd = newDBDirector()
-  var dbtest = dbd.registerCouchDB("test", CONF_DB_SERVERADR, CONF_DB_USER, CONF_DB_PASSWORD)
-  dbtest.registerList("authors", "authors", "authors-view")
+
+  #var dbtest = dbd.registerCouchDB("test", CONF_DB_SERVERADR, CONF_DB_USER, CONF_DB_PASSWORD)
+  #dbtest.registerList("authors", "authors", "authors-view")
+
   var dbperf = dbd.registerCouchDB("test_performance", CONF_DB_SERVERADR, CONF_DB_USER, CONF_DB_PASSWORD)
-  dbperf.registerList("persons", "persons", "all")
+  dbperf.registerList("persons", "persons", "all", true)
+  dbperf.registerList("locations", "locations", "all", true)
+  dbperf.registerList("event_types", "event_types", "all", true)
   dbperf.registerList("persons_name", "persons", "key_name")
   dbperf.registerList("events", "events", "all")
 
