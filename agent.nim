@@ -15,12 +15,12 @@ proc serverCallback(req: Request) {.async.} =
   echo(repath)
   echo(opts)
   let qopts = newQueryOptions(opts.key, opts.startkey, opts.endkey)
-  let res = await dbd.query(repath.db, repath.list, qopts, true)
+  var reslist = await dbd.query(repath.db, repath.list, qopts)
   #echo(res)
   let headers = {
     "Content-type": "application/json; charset=utf-8"
   }
-  await req.respond(Http200, res, headers.newHttpHeaders(true))
+  await req.respond(Http200, reslist.lastresult, headers.newHttpHeaders(true))
   dbd.getListObj(repath.db, repath.list).cacheResult()
 
 proc newAgent*(): Agent =
