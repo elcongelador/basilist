@@ -49,13 +49,16 @@ proc getListObj*(db: BDatabase, listname: string): BList =
 
 proc query*(db: CouchDatabase, listname: string, options: QueryOptions): Future[BList] {.async.} =
   var list = db.getListObj(listname)
-  list.lastresult = await db.client.query(db.name, CouchList(list).srcdoc, CouchList(list).srcview, options)
+  list.resultString = await db.client.query(db.name, CouchList(list).srcdoc, CouchList(list).srcview, options)
   result = list
 
 proc query*(db: BDatabase, listname: string, options: QueryOptions): Future[BList]  {.async.} =
   if(db of CouchDatabase):
       var list = await CouchDatabase(db).query(listname, options)
       result = list
+
+  if result.hasFieldReference():
+    result.transformList()
 
 proc query*(dbd: DBDirector, dbname: string, listname: string, options: QueryOptions): Future[BList]  {.async.} =
   let db = dbd.getDBObj(dbname)
@@ -66,8 +69,9 @@ proc cacheList*(db: BDatabase, listname: string) =
   var list = waitFor(db.query(listname, newQueryOptions()))
   list.cacheResult()
 
-proc registerList*(db: CouchDatabase, name: string, document: string, view: string, prefetch = false) =
+proc registerList*(db: CouchDatabase, name: string, document: string, view: string, prefetch = false): CouchList =
   echo("db.registerList: " & name)
   var nlist = newCouchList(name, document, view)
   db.lists[name] = nlist
   if prefetch: db.cacheList(name)
+  result = nlist

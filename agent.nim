@@ -20,8 +20,8 @@ proc serverCallback(req: Request) {.async.} =
   let headers = {
     "Content-type": "application/json; charset=utf-8"
   }
-  await req.respond(Http200, reslist.lastresult, headers.newHttpHeaders(true))
-  dbd.getListObj(repath.db, repath.list).cacheResult()
+  await req.respond(Http200, reslist.resultString, headers.newHttpHeaders(true))
+  #dbd.getListObj(repath.db, repath.list).cacheResult()
 
 proc newAgent*(): Agent =
   var ag = Agent()
@@ -31,11 +31,13 @@ proc newAgent*(): Agent =
   #dbtest.registerList("authors", "authors", "authors-view")
 
   var dbperf = dbd.registerCouchDB("test_performance", CONF_DB_SERVERADR, CONF_DB_USER, CONF_DB_PASSWORD)
-  dbperf.registerList("persons", "persons", "all", true)
-  dbperf.registerList("locations", "locations", "all", true)
-  dbperf.registerList("event_types", "event_types", "all", true)
-  dbperf.registerList("persons_name", "persons", "key_name")
-  dbperf.registerList("events", "events", "all")
+  var perlist =  dbperf.registerList("persons", "persons", "all", true)
+  discard dbperf.registerList("locations", "locations", "all", true)
+  discard dbperf.registerList("event_types", "event_types", "all", true)
+  discard dbperf.registerList("persons_name", "persons", "key_name")
+  var evlist = dbperf.registerList("events", "events", "all")
+  evlist.addFieldReference(("person_id", perlist, "display_name"))
+
 
   ag.server = newHttpServer(CONF_SERVER_PORT, serverCallback)
   result = ag
