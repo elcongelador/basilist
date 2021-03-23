@@ -53,9 +53,14 @@ proc query*(db: CouchDatabase, listname: string, options: QueryOptions): Future[
   result = list
 
 proc query*(db: BDatabase, listname: string, options: QueryOptions): Future[BList]  {.async.} =
+  var list: BList
+
   if(db of CouchDatabase):
-      var list = await CouchDatabase(db).query(listname, options)
+      list = await CouchDatabase(db).query(listname, options)
       result = list
+
+  #if list.doCacheRows and not list.cacheIsValid:
+  #  list.addResultToCache()
 
   if result.hasFieldReference():
     result.transformList()
@@ -67,11 +72,15 @@ proc query*(dbd: DBDirector, dbname: string, listname: string, options: QueryOpt
 
 proc cacheList*(db: BDatabase, listname: string) =
   var list = waitFor(db.query(listname, newQueryOptions()))
-  list.cacheResult()
+  list.addResultToCache()
 
-proc registerList*(db: CouchDatabase, name: string, document: string, view: string, prefetch = false): CouchList =
+proc registerList*(db: CouchDatabase, name: string, document: string, view: string, cacheResults = false): CouchList =
   echo("db.registerList: " & name)
-  var nlist = newCouchList(name, document, view)
+  var nlist = newCouchList(name, document, view, cacheResults)
   db.lists[name] = nlist
-  if prefetch: db.cacheList(name)
   result = nlist
+
+proc prefetchReferences*(db: BDatabase) =
+  for list in db.lists.values:
+    for fref in list.fieldrefs:
+      db.cacheList(fref.reflist.name)

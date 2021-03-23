@@ -5,11 +5,14 @@ import std/monotimes
 type
   BList* = ref object of RootObj #of RootObj needed for inheritance
     name*: string
-    #rows: JsonNode 
-    cache: Table[string, JsonNode]
-    resultString*: string
-    resultJson*: JsonNode
-    fieldrefs: seq[FieldReference]
+    doCacheResults*: bool  #enables cacheResult
+    doCacheRows*: bool #enables cacheRow
+    cacheResult: Table[string, string] #result string cache
+    cacheRow: Table[string, JsonNode] #row cache in json form
+    resultJson*: JsonNode #last result json
+    resultString*: string #last result string
+    fieldrefs*: seq[FieldReference]
+    cacheIsValid*: bool
 
   CouchList* = ref object of BList
     srcdoc*: string
@@ -23,12 +26,16 @@ type
     reflist: BList
     reffield: string
 
-proc newCouchList*(name: string, document: string, view: string): CouchList =
+proc newCouchList*(name: string, document: string, view: string, cachResults: bool): CouchList =
   var cl = CouchList()
   cl.name = name
+  cl.doCacheRows = false
+  cl.doCacheResults = cachResults
+  cl.cacheIsValid = false
+
   cl.srcdoc = document
   cl.srcview = view
-  cl.cache = initTable[string, JsonNode]()
+  cl.cacheRow = initTable[string, JsonNode]()
   result = cl
 
 method resultToJson*(list: BList) {.base.} =
@@ -44,33 +51,36 @@ method resultToJson*(list: CouchList) =
   echo("CouchList.resultToJson")
   list.resultJson = parseJson(list.resultString)
 
-proc cacheResult*(list: CouchList) =
-  echo("list.cacheResult: " & list.name)
-  echo("number of cache rows (start): " & $(len(list.cache)))
+proc addResultToCache*(list: CouchList) =
+  echo("list.addResultToCache: " & list.name)
+  echo("number of cache rows (start): " & $(len(list.cacheRow)))
 
   let a = getMonoTime()
-  list.resultToJson()
+  list.resultToJson() #convert string to json object
   let b = getMonoTime()
   let duration = b - a
   echo(duration)
 
-  for row in list.resultJson["rows"]:
+  for row in list.resultJson["rows"]: #add each row to cache
     let key = row["id"].getStr()
-    list.cache[key] = row["value"]
+    list.cacheRow[key] = row["value"]
 
   let c = getMonoTime()
 
   let duration1 = c - b
   echo(duration1)
 
-  echo("number of cache rows (end): " & $(len(list.cache)))
+  echo("number of cache rows (end): " & $(len(list.cacheRow)))
 
-proc cacheResult*(list: BList) =
+  list.cacheIsValid = true
+
+proc addResultToCache*(list: BList) =
   if list of CouchList:
-    CouchList(list).cacheResult()
+    CouchList(list).addResultToCache()
 
 proc addFieldReference*(list: BList, newref: FieldReference) =
   list.fieldrefs.add(newref)
+  newref.reflist.doCacheRows = true #reference implies cache on refered list
 
 proc hasFieldReference*(list: BList): bool =
   result = (if len(list.fieldrefs) > 0: true else: false)
@@ -82,12 +92,18 @@ proc transformList*(list: BList) =
   for row in list.resultJson["rows"]:
     var rowval = row["value"]
     for fref in list.fieldrefs: #iterate through field references
+      if not fref.reflist.cacheIsValid: #make sure cache of refered list is valid
+        #TODO
+        discard
+
       var key = rowval[fref.field]
       if key.kind == JString:
-        var referedNode = fref.reflist.cache[key.getStr()] #get the refered node from cache
+        var referedNode = fref.reflist.cacheRow[key.getStr()] #get the refered node from cache
         rowval[fref.field & "_ref"] = referedNode[fref.reffield] #insert new node here
 
   #for row in list.resultJson["rows"]:
   #  echo("person_id: " & row["person_id"].getStr())
 
   list.resultString = $(list.resultJson)
+
+  echo("transformed number of rows: " & $len(list.resultJson["rows"]))

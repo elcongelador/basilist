@@ -31,13 +31,15 @@ proc newAgent*(): Agent =
   #dbtest.registerList("authors", "authors", "authors-view")
 
   var dbperf = dbd.registerCouchDB("test_performance", CONF_DB_SERVERADR, CONF_DB_USER, CONF_DB_PASSWORD)
-  var perlist =  dbperf.registerList("persons", "persons", "all", true)
-  discard dbperf.registerList("locations", "locations", "all", true)
-  discard dbperf.registerList("event_types", "event_types", "all", true)
-  discard dbperf.registerList("persons_name", "persons", "key_name")
-  var evlist = dbperf.registerList("events", "events", "all")
+  #discard dbperf.registerList("persons_name", "persons", "key_name")
+  var perlist =  dbperf.registerList("persons", "persons", "all")
+  discard dbperf.registerList("locations", "locations", "all")
+  var evtplist = dbperf.registerList("event_types", "event_types", "all")
+  var evlist = dbperf.registerList("events", "events", "all", true)
   evlist.addFieldReference(("person_id", perlist, "display_name"))
+  evlist.addFieldReference(("event_type_id", evtplist, "name"))
 
+  dbperf.prefetchReferences()
 
   ag.server = newHttpServer(CONF_SERVER_PORT, serverCallback)
   result = ag
