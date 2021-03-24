@@ -7,8 +7,8 @@ type
     name*: string
     doCacheResults*: bool  #enables cacheResult
     doCacheRows*: bool #enables cacheRow
-    cacheResult: Table[string, string] #result string cache
-    cacheRow: Table[string, JsonNode] #row cache in json form
+    cacheOfResults*: Table[string, string] #result string cache
+    cacheOfRows: Table[string, JsonNode] #row cache in json form
     resultJson*: JsonNode #last result json
     resultString*: string #last result string
     fieldrefs*: seq[FieldReference]
@@ -35,7 +35,7 @@ proc newCouchList*(name: string, document: string, view: string, cachResults: bo
 
   cl.srcdoc = document
   cl.srcview = view
-  cl.cacheRow = initTable[string, JsonNode]()
+  cl.cacheOfRows = initTable[string, JsonNode]()
   result = cl
 
 method resultToJson*(list: BList) {.base.} =
@@ -53,7 +53,7 @@ method resultToJson*(list: CouchList) =
 
 proc addResultToCache*(list: CouchList) =
   echo("list.addResultToCache: " & list.name)
-  echo("number of cache rows (start): " & $(len(list.cacheRow)))
+  echo("number of cache rows (start): " & $(len(list.cacheOfRows)))
 
   let a = getMonoTime()
   list.resultToJson() #convert string to json object
@@ -63,14 +63,14 @@ proc addResultToCache*(list: CouchList) =
 
   for row in list.resultJson["rows"]: #add each row to cache
     let key = row["id"].getStr()
-    list.cacheRow[key] = row["value"]
+    list.cacheOfRows[key] = row["value"]
 
   let c = getMonoTime()
 
   let duration1 = c - b
   echo(duration1)
 
-  echo("number of cache rows (end): " & $(len(list.cacheRow)))
+  echo("number of cache rows (end): " & $(len(list.cacheOfRows)))
 
   list.cacheIsValid = true
 
@@ -98,7 +98,7 @@ proc transformList*(list: BList) =
 
       var key = rowval[fref.field]
       if key.kind == JString:
-        var referedNode = fref.reflist.cacheRow[key.getStr()] #get the refered node from cache
+        var referedNode = fref.reflist.cacheOfRows[key.getStr()] #get the refered node from cache
         rowval[fref.field & "_ref"] = referedNode[fref.reffield] #insert new node here
 
   #for row in list.resultJson["rows"]:

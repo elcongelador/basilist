@@ -53,17 +53,22 @@ proc query*(db: CouchDatabase, listname: string, options: QueryOptions): Future[
   result = list
 
 proc query*(db: BDatabase, listname: string, options: QueryOptions): Future[BList]  {.async.} =
-  var list: BList
+  var list = db.getListObj(listname)
 
-  if(db of CouchDatabase):
-      list = await CouchDatabase(db).query(listname, options)
-      result = list
+  if list.doCacheResults and list.cacheOfResults.hasKey($options):
+    echo("cache hit")
+    list.resultString = list.cacheOfResults[$options]
+  else:
+    if(db of CouchDatabase):
+        list = await CouchDatabase(db).query(listname, options)
 
-  #if list.doCacheRows and not list.cacheIsValid:
-  #  list.addResultToCache()
+    if list.hasFieldReference():
+      list.transformList()
 
-  if result.hasFieldReference():
-    result.transformList()
+    if list.doCacheResults: #result was not in cache, so add it here
+      list.cacheOfResults[$options] = list.resultString
+
+  result = list
 
 proc query*(dbd: DBDirector, dbname: string, listname: string, options: QueryOptions): Future[BList]  {.async.} =
   let db = dbd.getDBObj(dbname)
