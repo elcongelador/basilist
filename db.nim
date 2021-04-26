@@ -89,3 +89,29 @@ proc prefetchReferences*(db: BDatabase) =
   for list in db.lists.values:
     for fref in list.fieldrefs:
       db.cacheList(fref.reflist.name)
+
+proc insert*(db: CouchDatabase, listname: string, row: string): Future[string] {.async.} =
+  result = await db.client.post(db.name, row)
+
+proc insert*(db: BDatabase, listname: string, row: string): Future[string]  {.async.} =
+  var list = db.getListObj(listname)
+
+  #TODO
+  #if list.doCacheResults and list.cacheOfResults.hasKey($options):
+  #  echo("cache hit")
+
+  if(db of CouchDatabase):
+      result = await CouchDatabase(db).insert(listname, row)
+
+  if list.hasFieldReference():
+    discard
+    #TODO
+
+  if list.doCacheResults: #result was not in cache, so add it here
+    discard
+    #TODO
+    #list.cacheOfResults[$options] = list.resultString
+
+proc insert*(dbd: DBDirector, dbname: string, listname: string, row: string): Future[string]  {.async.} =
+  let db = dbd.getDBObj(dbname)
+  result = await db.insert(listname, row)

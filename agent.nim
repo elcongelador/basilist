@@ -10,25 +10,41 @@ type
 
 proc serverCallback(req: Request) {.async.} =
   echo("--- REQUEST ---")
-  let repath = parseURLPath(req.url.path)
-  let opts = parseURLQuery(req.url.query)
-  echo(repath)
-  echo(opts)
-  let qopts = newQueryOptions(opts.key, opts.startkey, opts.endkey)
-  var reslist = await dbd.query(repath.db, repath.list, qopts)
-  #echo(res)
-  let headers = {
-    "Content-type": "application/json; charset=utf-8"
-  }
-  await req.respond(Http200, reslist.resultString, headers.newHttpHeaders(true))
-  #dbd.getListObj(repath.db, repath.list).cacheResult()
+  let rpath = parseURLPath(req.url.path)
+  echo(rpath)
+
+  case req.reqMethod
+  of HttpGet:
+    echo("GET")
+    let opts = parseURLQuery(req.url.query)
+    echo(opts)
+    let qopts = newQueryOptions(opts.key, opts.startkey, opts.endkey)
+    var reslist = await dbd.query(rpath.db, rpath.list, qopts)
+
+    let headers = {
+      "Content-type": "application/json; charset=utf-8"
+    }
+    await req.respond(Http200, reslist.resultString, headers.newHttpHeaders(true))
+    #dbd.getListObj(rpath.db, rpath.list).cacheResult()
+  of HttpPut:
+    echo("PUT")
+    echo(req.body)
+    var res = await dbd.insert(rpath.db, rpath.list, req.body)
+    echo(res)
+
+    let headers = {
+      "Content-type": "application/json; charset=utf-8"
+    }
+    await req.respond(Http200, "{\"ok\":\"true\"}", headers.newHttpHeaders(true))
+  else:
+    discard
 
 proc newAgent*(): Agent =
   var ag = Agent()
   dbd = newDBDirector()
 
-  #var dbtest = dbd.registerCouchDB("test", CONF_DB_SERVERADR, CONF_DB_USER, CONF_DB_PASSWORD)
-  #dbtest.registerList("authors", "authors", "authors-view")
+  var dbtest = dbd.registerCouchDB("test", CONF_DB_SERVERADR, CONF_DB_USER, CONF_DB_PASSWORD)
+  discard dbtest.registerList("authors", "authors", "authors-view")
 
   var dbperf = dbd.registerCouchDB("test_performance", CONF_DB_SERVERADR, CONF_DB_USER, CONF_DB_PASSWORD)
   #discard dbperf.registerList("persons_name", "persons", "key_name")
@@ -38,7 +54,6 @@ proc newAgent*(): Agent =
   var evlist = dbperf.registerList("events", "events", "all", true)
   evlist.addFieldReference(("person_id", perlist, "display_name"))
   evlist.addFieldReference(("event_type_id", evtplist, "name"))
-
   dbperf.prefetchReferences()
 
   ag.server = newHttpServer(CONF_SERVER_PORT, serverCallback)

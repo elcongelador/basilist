@@ -1,6 +1,6 @@
 import httpclient, base64
 import asyncdispatch
-#import json
+import oids
 
 type
   CouchQueryOptions* = tuple
@@ -60,6 +60,20 @@ proc query*(client: CouchClient, db: string, ddoc: string, view: string, options
 #proc getDocument*(client: CouchClient, db: string, ddoc: string, view: string): Future[JsonNode] {.async.} =
 #  let response = await client.query(db, ddoc, view)
 #  result = parseJson(response)
+
+#automatically generates _id
+proc post*(client: CouchClient, db: string, doc: string): Future[string] {.async.} =
+  let uuid = $(genOid())
+  #doc["_id"] = %* uuid #JsonNode
+  var rstr = client.serveradr & "/" & db & "/" & uuid
+  echo("couch.post: " & rstr)
+
+  try:
+    var res = await client.httpclient.putContent(rstr, $(doc))
+    client.httpclient.close() #occasional ProtocolErros if we don't do this
+    result = res
+  except ProtocolError:
+    echo "ProtocolError!"
 
 #when isMainModule:
   #let client = newCouchClient("http://x.x.x.x:5984", "user", "password")
