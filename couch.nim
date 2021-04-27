@@ -61,12 +61,25 @@ proc query*(client: CouchClient, db: string, ddoc: string, view: string, options
 #  let response = await client.query(db, ddoc, view)
 #  result = parseJson(response)
 
-#automatically generates _id
+#create a new document; automatically generates _id
 proc post*(client: CouchClient, db: string, doc: string): Future[string] {.async.} =
   let uuid = $(genOid())
   #doc["_id"] = %* uuid #JsonNode
   var rstr = client.serveradr & "/" & db & "/" & uuid
   echo("couch.post: " & rstr)
+
+  try:
+    var res = await client.httpclient.putContent(rstr, $(doc))
+    client.httpclient.close() #occasional ProtocolErros if we don't do this
+    result = res
+  except ProtocolError:
+    echo "ProtocolError!"
+
+#create a new document with id
+#if documents with id exists and rev ist in doc argument, it will be updated
+proc put*(client: CouchClient, db: string, id: string, doc: string): Future[string] {.async.} =
+  var rstr = client.serveradr & "/" & db & "/" & id
+  echo("couch.put: " & rstr)
 
   try:
     var res = await client.httpclient.putContent(rstr, $(doc))

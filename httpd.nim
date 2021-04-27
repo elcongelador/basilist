@@ -26,10 +26,14 @@ func parseURLPath*(url: string): auto =
 
   if(len(parts) < 3 or len(parts[0]) > 0 or len(parts[1]) < 1 or len(parts[2]) < 1):
     #TODO: throw error
-    #echo("ERROR: URL does not conform to /dbname/listname")
+    #echo("ERROR: URL does not conform to /dbname/listname or /dbname/listname/id")
     discard
 
-  result = (db: parts[1], list: parts[2])
+  var id: string
+  if(len(parts) > 3): 
+    id = parts[3]
+
+  result = (db: parts[1], list: parts[2], id: id)
 
 func parseURLQuery*(query: string): auto =
   var key, startkey, endkey: string

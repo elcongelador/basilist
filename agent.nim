@@ -14,7 +14,7 @@ proc serverCallback(req: Request) {.async.} =
   echo(rpath)
 
   case req.reqMethod
-  of HttpGet:
+  of HttpGet: #QUERY
     echo("GET")
     let opts = parseURLQuery(req.url.query)
     echo(opts)
@@ -26,10 +26,20 @@ proc serverCallback(req: Request) {.async.} =
     }
     await req.respond(Http200, reslist.resultString, headers.newHttpHeaders(true))
     #dbd.getListObj(rpath.db, rpath.list).cacheResult()
-  of HttpPut:
+  of HttpPut: #INSERT
     echo("PUT")
     echo(req.body)
     var res = await dbd.insert(rpath.db, rpath.list, req.body)
+    echo(res)
+
+    let headers = {
+      "Content-type": "application/json; charset=utf-8"
+    }
+    await req.respond(Http200, "{\"ok\":\"true\"}", headers.newHttpHeaders(true))
+  of HttpPost: #UPDATE
+    echo("POST")
+    echo(req.body)
+    var res = await dbd.update(rpath.db, rpath.list, rpath.id, req.body)
     echo(res)
 
     let headers = {

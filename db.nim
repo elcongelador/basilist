@@ -115,3 +115,29 @@ proc insert*(db: BDatabase, listname: string, row: string): Future[string]  {.as
 proc insert*(dbd: DBDirector, dbname: string, listname: string, row: string): Future[string]  {.async.} =
   let db = dbd.getDBObj(dbname)
   result = await db.insert(listname, row)
+
+proc update*(db: CouchDatabase, listname: string, id: string, row: string): Future[string] {.async.} =
+  result = await db.client.put(db.name, id, row)
+
+proc update*(db: BDatabase, listname: string, id: string, row: string): Future[string]  {.async.} =
+  var list = db.getListObj(listname)
+
+  #TODO
+  #if list.doCacheResults and list.cacheOfResults.hasKey($options):
+  #  echo("cache hit")
+
+  if(db of CouchDatabase):
+      result = await CouchDatabase(db).update(listname, id, row)
+
+  if list.hasFieldReference():
+    discard
+    #TODO
+
+  if list.doCacheResults: #result was not in cache, so add it here
+    discard
+    #TODO
+    #list.cacheOfResults[$options] = list.resultString
+
+proc update*(dbd: DBDirector, dbname: string, listname: string, id: string, row: string): Future[string]  {.async.} =
+  let db = dbd.getDBObj(dbname)
+  result = await db.update(listname, id, row)

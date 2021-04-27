@@ -14,6 +14,8 @@ type
     resultString*: string #last result string
     fieldrefs*: seq[FieldReference]
     cacheIsValid*: bool
+    #TODO
+    #insert options: auto-generate id or not
 
   CouchList* = ref object of BList
     srcdoc*: string
