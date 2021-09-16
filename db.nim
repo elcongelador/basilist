@@ -30,7 +30,10 @@ proc newDBDirector*(): DBDirector =
   result = dbd
 
 proc getDBObj(dbd: DBDirector, dbname: string): BDatabase =
-  result = dbd.dbs[dbname]
+  if dbd.dbs.hasKey(dbname):
+    result = dbd.dbs[dbname]
+  else:
+    result = nil
 
 proc registerCouchDB*(dbd: DBDirector, name: string, serveradr: string, user: string, password: string): CouchDatabase =
   var ndb = CouchDatabase()
@@ -45,14 +48,21 @@ proc getListObj*(dbd: DBDirector, dbname: string, listname: string): BList =
   result = db.lists[listname]
 
 proc getListObj*(db: BDatabase, listname: string): BList =
+  echo("db.getListObj: " & listname)
+  echo("keys: ")
+  for k in db.lists.keys:
+    echo k
+
   result = db.lists[listname]
 
 proc query*(db: CouchDatabase, listname: string, options: QueryOptions): Future[BList] {.async.} =
+  echo("db.query.CouchDatabase: " & listname)
   var list = db.getListObj(listname)
   list.resultString = await db.client.query(db.name, CouchList(list).srcdoc, CouchList(list).srcview, options)
   result = list
 
 proc query*(db: BDatabase, listname: string, options: QueryOptions): Future[BList]  {.async.} =
+  echo("db.query.BDatabase: " & listname)
   var list = db.getListObj(listname)
 
   if list.doCacheResults and list.cacheOfResults.hasKey($options):
@@ -71,6 +81,7 @@ proc query*(db: BDatabase, listname: string, options: QueryOptions): Future[BLis
   result = list
 
 proc query*(dbd: DBDirector, dbname: string, listname: string, options: QueryOptions): Future[BList]  {.async.} =
+  echo("db.query.DBDirector: " & listname)
   let db = dbd.getDBObj(dbname)
   var list = await db.query(listname, options)
   result = list
