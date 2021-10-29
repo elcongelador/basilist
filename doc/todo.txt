@@ -1,0 +1,2 @@
+#NEXT
+return id and rev we got from couch for inserts to basilist clients
