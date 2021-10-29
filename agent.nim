@@ -35,7 +35,7 @@ proc serverCallback(req: Request) {.async.} =
     let headers = {
       "Content-type": "application/json; charset=utf-8"
     }
-    await req.respond(Http200, "{\"ok\":\"true\"}", headers.newHttpHeaders(true))
+    await req.respond(Http200, res, headers.newHttpHeaders(true))
   of HttpPost: #UPDATE
     echo("POST")
     echo(req.body)
@@ -65,6 +65,9 @@ proc newAgent*(): Agent =
   evlist.addFieldReference(("person_id", perlist, "display_name"))
   evlist.addFieldReference(("event_type_id", evtplist, "name"))
   dbperf.prefetchReferences()
+
+  var dbtestsuite = dbd.registerCouchDB("testsuite", CONF_DB_SERVERADR, CONF_DB_USER, CONF_DB_PASSWORD)
+  discard dbtestsuite.registerList("authors", "authors", "authors-view")
 
   ag.server = newHttpServer(CONF_SERVER_PORT, serverCallback)
   result = ag
