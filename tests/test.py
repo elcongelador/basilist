@@ -19,6 +19,9 @@ def define_tests():
     add_test("inserts", "basic insert 1", test_insert1)
     add_test("inserts", "basic insert 2", test_insert2)
     add_test("inserts", "basic insert 3", test_insert3)
+    add_test("deletes", "basic delete 1", test_delete1)
+    add_test("deletes", "basic delete 2", test_delete2)
+    add_test("deletes", "basic delete 3", test_delete3)
 
 def add_test(category, name, function):
     global tests
@@ -72,6 +75,24 @@ def test_insert2():
 def test_insert3():
     payload = '{"type":"author","name":"Hugo","year":1980}'
     r = requests.put("http://127.0.0.1:8080/testsuite/authors", data = payload)
+    return(create_result(r.json()))
+
+def test_delete1():
+    global results
+    data = results["inserts:basic insert 1"].data
+    r = requests.delete("http://127.0.0.1:8080/testsuite/authors/" + data["id"] + "?rev=" + data["rev"])
+    return(create_result(r.json()))
+
+def test_delete2():
+    global results
+    data = results["inserts:basic insert 2"].data
+    r = requests.delete("http://127.0.0.1:8080/testsuite/authors/" + data["id"] + "?rev=" + data["rev"])
+    return(create_result(r.json()))
+
+def test_delete3():
+    global results
+    data = results["inserts:basic insert 3"].data
+    r = requests.delete("http://127.0.0.1:8080/testsuite/authors/" + data["id"] + "?rev=" + data["rev"])
     return(create_result(r.json()))
 
 
