@@ -88,6 +88,19 @@ proc put*(client: CouchClient, db: string, id: string, doc: string): Future[stri
   except ProtocolError:
     echo "ProtocolError!"
 
+#delete a document
+proc delete*(client: CouchClient, db: string, id: string, rev: string): Future[string] {.async.} =
+  var rstr = client.serveradr & "/" & db & "/" & id & "?rev=" & rev
+  echo("couch.delete: " & rstr)
+
+  try:
+    var res = await client.httpclient.deleteContent(rstr)
+    client.httpclient.close() #occasional ProtocolErros if we don't do this
+    result = res
+  except ProtocolError:
+    echo "ProtocolError!"
+
+
 #when isMainModule:
   #let client = newCouchClient("http://x.x.x.x:5984", "user", "password")
   #let res = client.getDocument("test", "authors", "authors-view")
