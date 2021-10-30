@@ -46,6 +46,18 @@ proc serverCallback(req: Request) {.async.} =
       "Content-type": "application/json; charset=utf-8"
     }
     await req.respond(Http200, "{\"ok\":\"true\"}", headers.newHttpHeaders(true))
+  of HttpDelete: #DELETE
+    echo("DELETE")
+    let opts = parseURLQuery(req.url.query)
+    echo(opts)
+    var res = await dbd.delete(rpath.db, rpath.list, rpath.id, opts.rev)
+    echo(res)
+
+    let headers = {
+      "Content-type": "application/json; charset=utf-8"
+    }
+    await req.respond(Http200, res, headers.newHttpHeaders(true))
+    #await req.respond(Http200, "{\"ok\":\"true\"}", headers.newHttpHeaders(true))
   else:
     discard
 
