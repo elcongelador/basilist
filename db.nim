@@ -152,3 +152,29 @@ proc update*(db: BDatabase, listname: string, id: string, row: string): Future[s
 proc update*(dbd: DBDirector, dbname: string, listname: string, id: string, row: string): Future[string]  {.async.} =
   let db = dbd.getDBObj(dbname)
   result = await db.update(listname, id, row)
+
+proc delete*(db: CouchDatabase, listname: string, id: string, rev: string): Future[string] {.async.} =
+  result = await db.client.delete(db.name, id, rev)
+
+proc delete*(db: BDatabase, listname: string, id: string, rev: string = ""): Future[string]  {.async.} =
+  var list = db.getListObj(listname)
+
+  #TODO
+  #if list.doCacheResults and list.cacheOfResults.hasKey($options):
+  #  echo("cache hit")
+
+  if(db of CouchDatabase):
+      result = await CouchDatabase(db).delete(listname, id, rev)
+
+  if list.hasFieldReference():
+    discard
+    #TODO
+
+  if list.doCacheResults:
+    discard
+    #TODO
+    #list.cacheOfResults[$options] = list.resultString
+
+proc delete*(dbd: DBDirector, dbname: string, listname: string, id: string, rev: string = ""): Future[string]  {.async.} =
+  let db = dbd.getDBObj(dbname)
+  result = await db.delete(listname, id, rev)
