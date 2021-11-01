@@ -19,6 +19,8 @@ def define_tests():
     add_test("inserts", "basic insert 1", test_insert1)
     add_test("inserts", "basic insert 2", test_insert2)
     add_test("inserts", "basic insert 3", test_insert3)
+    add_test("queries", "query all authors", test_query_all)
+    add_test("queries", "query one author", test_query_one)
     add_test("deletes", "basic delete 1", test_delete1)
     add_test("deletes", "basic delete 2", test_delete2)
     add_test("deletes", "basic delete 3", test_delete3)
@@ -53,14 +55,15 @@ def print_summary():
 
     print("")
     print("--- Summary ---")
-    print("{} of {} tests succeeded, {} failed.".format(succeeded, len(tests), failed))
-    print("")
 
     for key, val in results.items():
         rstr = "SUCCESS" if val.success else "FAIL"
         print(key + ": " + rstr)
         print(val.data)
         print("")
+
+    print("---")
+    print("{} of {} tests succeeded, {} failed.".format(succeeded, len(tests), failed))
 
 def test_insert1():
     payload = '{"type":"author","name":"Emil","year":1968}'
@@ -76,6 +79,32 @@ def test_insert3():
     payload = '{"type":"author","name":"Hugo","year":1980}'
     r = requests.put("http://127.0.0.1:8080/testsuite/authors", data = payload)
     return(create_result(r.json()))
+
+def test_query_all():
+    r = requests.get("http://127.0.0.1:8080/testsuite/authors")
+    rjson = r.json()
+
+    if rjson["total_rows"] == 3:
+        if rjson["rows"][0]["key"] == "Egon" \
+            and rjson["rows"][1]["key"] == "Emil" \
+            and rjson["rows"][2]["key"] == "Hugo":
+            return(TestResult(True, rjson))
+        else:
+            return(TestResult(False, rjson))
+    else:
+        return(TestResult(False, rjson))
+
+def test_query_one():
+    r = requests.get("http://127.0.0.1:8080/testsuite/authors?key=\"Hugo\"")
+    rjson = r.json()
+
+    if rjson["total_rows"] == 3 and rjson["offset"] == 2:
+        if rjson["rows"][0]["key"] == "Hugo":
+            return(TestResult(True, rjson))
+        else:
+            return(TestResult(False, rjson))
+    else:
+        return(TestResult(False, rjson))
 
 def test_delete1():
     global results
@@ -97,7 +126,7 @@ def test_delete3():
 
 
 def create_result(rjson):
-    if(rjson["ok"] == True):
+    if rjson["ok"] == True:
         return(TestResult(True, rjson))
     else:
         return(TestResult(False, rjson))
