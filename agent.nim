@@ -79,7 +79,7 @@ proc newAgent*(): Agent =
   dbperf.prefetchReferences()
 
   var dbtestsuite = dbd.registerCouchDB("testsuite", CONF_DB_SERVERADR, CONF_DB_USER, CONF_DB_PASSWORD)
-  discard dbtestsuite.registerList("authors", "authors", "authors-view")
+  discard dbtestsuite.registerList("authors", "authors", "key_name")
 
   ag.server = newHttpServer(CONF_SERVER_PORT, serverCallback)
   result = ag
