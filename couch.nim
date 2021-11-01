@@ -62,7 +62,7 @@ proc query*(client: CouchClient, db: string, ddoc: string, view: string, options
 #  result = parseJson(response)
 
 #create a new document; automatically generates _id
-proc post*(client: CouchClient, db: string, doc: string): Future[string] {.async.} =
+proc put*(client: CouchClient, db: string, doc: string): Future[string] {.async.} =
   let uuid = $(genOid())
   #doc["_id"] = %* uuid #JsonNode
   var rstr = client.serveradr & "/" & db & "/" & uuid

@@ -102,7 +102,7 @@ proc prefetchReferences*(db: BDatabase) =
       db.cacheList(fref.reflist.name)
 
 proc insert*(db: CouchDatabase, listname: string, row: string): Future[string] {.async.} =
-  result = await db.client.post(db.name, row)
+  result = await db.client.put(db.name, row)
 
 proc insert*(db: BDatabase, listname: string, row: string): Future[string]  {.async.} =
   var list = db.getListObj(listname)
