@@ -58,7 +58,7 @@ proc getListObj*(db: BDatabase, listname: string): BList =
 proc query*(db: CouchDatabase, listname: string, options: QueryOptions): Future[BList] {.async.} =
   echo("db.query.CouchDatabase: " & listname)
   var list = db.getListObj(listname)
-  list.resultString = await db.client.query(db.name, CouchList(list).srcdoc, CouchList(list).srcview, options)
+  list.resultString = await db.client.queryView(db.name, CouchList(list).srcdoc, CouchList(list).srcview, options)
   result = list
 
 proc query*(db: BDatabase, listname: string, options: QueryOptions): Future[BList]  {.async.} =
