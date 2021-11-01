@@ -1,9 +1,14 @@
 #NEXT
 
+#TODO
+- lists / couchdb: let user register different views for one list (db.nim: registerList)
+- create error handling for requests querying inexistent lists
+
+#TODO MAYBE
+- in agent.nim for updates: change from post to put - to reflect CouchDB API
 
 #DONE
 - return id and rev we got from couch for inserts to basilist clients
-
 
 #NOTES
 - strange: order of functions in file db.nim (three versions of each query / insert / update / delete) is important,
