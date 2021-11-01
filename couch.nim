@@ -43,7 +43,9 @@ proc strQueryOptions(options: CouchQueryOptions): string =
 
   result = res
 
-proc query*(client: CouchClient, db: string, ddoc: string, view: string, options: CouchQueryOptions): Future[string] {.async.} =
+#when using options(key, startkey, endkey) make sure to quote strings when type in CouchDB is a string
+#for example: key="Jupiter" in contrast to integers: key=1234
+proc queryView*(client: CouchClient, db: string, ddoc: string, view: string, options: CouchQueryOptions): Future[string] {.async.} =
   #http://188.166.48.211:5984/test/_design/authors/_view/authors-view
   var rstr = client.serveradr & "/" & db & "/_design/" & ddoc & "/_view/" & view
   rstr.add(strQueryOptions(options))
