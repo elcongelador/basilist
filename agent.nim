@@ -45,7 +45,7 @@ proc serverCallback(req: Request) {.async.} =
     let headers = {
       "Content-type": "application/json; charset=utf-8"
     }
-    await req.respond(Http200, "{\"ok\":\"true\"}", headers.newHttpHeaders(true))
+    await req.respond(Http200, res, headers.newHttpHeaders(true))
   of HttpDelete: #DELETE
     echo("DELETE")
     let opts = parseURLQuery(req.url.query)
