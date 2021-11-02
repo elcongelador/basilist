@@ -68,7 +68,7 @@ proc put*(client: CouchClient, db: string, doc: string): Future[string] {.async.
   let uuid = $(genOid())
   #doc["_id"] = %* uuid #JsonNode
   var rstr = client.serveradr & "/" & db & "/" & uuid
-  echo("couch.post: " & rstr)
+  echo("couch.put (generated id): " & rstr)
 
   try:
     var res = await client.httpclient.putContent(rstr, $(doc))
