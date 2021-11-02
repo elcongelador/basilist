@@ -21,6 +21,7 @@ def define_tests():
     add_test("inserts", "basic insert 3", test_insert3)
     add_test("queries", "query all authors", test_query_all)
     add_test("queries", "query one author", test_query_one)
+    add_test("queries", "query range authors", test_query_range)
     add_test("deletes", "basic delete 1", test_delete1)
     add_test("deletes", "basic delete 2", test_delete2)
     add_test("deletes", "basic delete 3", test_delete3)
@@ -100,6 +101,19 @@ def test_query_one():
 
     if rjson["total_rows"] == 3 and rjson["offset"] == 2:
         if rjson["rows"][0]["key"] == "Hugo":
+            return(TestResult(True, rjson))
+        else:
+            return(TestResult(False, rjson))
+    else:
+        return(TestResult(False, rjson))
+
+def test_query_range():
+    r = requests.get("http://127.0.0.1:8080/testsuite/authors?startkey=\"Egon\"&endkey=\"Emil\"")
+    rjson = r.json()
+
+    if rjson["total_rows"] == 3:
+        if rjson["rows"][0]["key"] == "Egon" \
+            and rjson["rows"][1]["key"] == "Emil":
             return(TestResult(True, rjson))
         else:
             return(TestResult(False, rjson))
