@@ -55,10 +55,9 @@ proc getListObj*(db: BDatabase, listname: string): BList =
 
   result = db.lists[listname]
 
-proc query*(db: CouchDatabase, listname: string, options: QueryOptions): Future[BList] {.async.} =
-  echo("db.query.CouchDatabase: " & listname)
-  var list = db.getListObj(listname)
-  list.resultString = await db.client.queryView(db.name, CouchList(list).srcdoc, CouchList(list).srcview, options)
+proc query*(db: CouchDatabase, list: CouchList, options: QueryOptions): Future[BList] {.async.} =
+  echo("db.query.CouchDatabase: " & list.name)
+  list.resultString = await db.client.queryView(db.name, list.srcdoc, list.srcview, options)
   result = list
 
 proc query*(db: BDatabase, listname: string, options: QueryOptions): Future[BList]  {.async.} =
@@ -70,7 +69,7 @@ proc query*(db: BDatabase, listname: string, options: QueryOptions): Future[BLis
     list.resultString = list.cacheOfResults[$options]
   else:
     if(db of CouchDatabase):
-        list = await CouchDatabase(db).query(listname, options)
+        list = await CouchDatabase(db).query(CouchList(list), options)
 
     if list.hasFieldReference():
       list.transformList()
