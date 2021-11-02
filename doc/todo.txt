@@ -3,6 +3,9 @@
 #TODO
 - lists / couchdb: let user register different views for one list (db.nim: registerList)
 - create error handling for requests querying inexistent lists
+- introduce error handling for errors coming from CouchDB ([HttpRequestError] Exception message: 400 Bad Request)
+can be tested with malformed json data for inserts / updates (for examples use single quotes instead of dobule quotes)
+- handle update conflict (wrong _rev) from CouchDB: ([HttpRequestError] Exception message: 409 Conflict)
 
 #TODO MAYBE
 - in agent.nim for updates: change from post to put - to reflect CouchDB API
