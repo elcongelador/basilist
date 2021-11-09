@@ -19,7 +19,7 @@ proc serverCallback(req: Request) {.async.} =
     let opts = parseURLQuery(req.url.query)
     echo(opts)
     let qopts = newQueryOptions(opts.key, opts.startkey, opts.endkey)
-    var reslist = await dbd.query(rpath.db, rpath.list, qopts)
+    var reslist = await dbd.read(rpath.db, rpath.list, qopts)
 
     let headers = {
       "Content-type": "application/json; charset=utf-8"
@@ -29,7 +29,7 @@ proc serverCallback(req: Request) {.async.} =
   of HttpPut: #INSERT
     echo("PUT")
     echo(req.body)
-    var res = await dbd.insert(rpath.db, rpath.list, req.body)
+    var res = await dbd.create(rpath.db, rpath.list, req.body)
     echo(res)
 
     let headers = {
@@ -80,6 +80,7 @@ proc newAgent*(): Agent =
 
   var dbtestsuite = dbd.registerCouchDB("testsuite", CONF_DB_SERVERADR, CONF_DB_USER, CONF_DB_PASSWORD)
   discard dbtestsuite.registerList("authors", "authors", "key_name")
+  #authlist.registerQuery("view-key_name", (document: "authors", view: "key_name")
 
   ag.server = newHttpServer(CONF_SERVER_PORT, serverCallback)
   result = ag

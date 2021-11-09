@@ -18,6 +18,8 @@ type
     #insert options: auto-generate id or not
 
   CouchList* = ref object of BList
+    #queries*: Table[string, tuple[document: string, view: string]]
+    queries*: Table[string, CouchQuery]
     srcdoc*: string
     srcview*: string
 
@@ -28,6 +30,10 @@ type
     field: string
     reflist: BList
     reffield: string
+
+  CouchQuery* = tuple
+    document: string
+    view: string
 
 proc newCouchList*(name: string, document: string, view: string, cachResults: bool): CouchList =
   var cl = CouchList()
@@ -41,11 +47,14 @@ proc newCouchList*(name: string, document: string, view: string, cachResults: bo
   cl.cacheOfRows = initTable[string, JsonNode]()
   result = cl
 
+proc registerQuery*(list: CouchList, name: string, query: CouchQuery) =
+  list.queries[name] = query
+
 method resultToJson*(list: BList) {.base.} =
   #echo("BList.resultToJson")
   #if list of CouchList:
   #  CouchList(list).resultToJson()
-  quit "resultToJson base method called!"
+  quit "resultToJson base method of type BList called!"
 
 method resultToJson*(list: CouchList) =
   #pragma needed to prevent compiler warning (different method lock levels because of parseJson)

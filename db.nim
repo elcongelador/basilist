@@ -55,12 +55,12 @@ proc getListObj*(db: BDatabase, listname: string): BList =
 
   result = db.lists[listname]
 
-proc query*(db: CouchDatabase, list: CouchList, options: QueryOptions): Future[BList] {.async.} =
+proc read*(db: CouchDatabase, list: CouchList, options: QueryOptions): Future[BList] {.async.} =
   echo("db.query.CouchDatabase: " & list.name)
   list.resultString = await db.client.queryView(db.name, list.srcdoc, list.srcview, options)
   result = list
 
-proc query*(db: BDatabase, listname: string, options: QueryOptions): Future[BList]  {.async.} =
+proc read*(db: BDatabase, listname: string, options: QueryOptions): Future[BList]  {.async.} =
   echo("db.query.BDatabase: " & listname)
   var list = db.getListObj(listname)
 
@@ -69,7 +69,7 @@ proc query*(db: BDatabase, listname: string, options: QueryOptions): Future[BLis
     list.resultString = list.cacheOfResults[$options]
   else:
     if(db of CouchDatabase):
-        list = await CouchDatabase(db).query(CouchList(list), options)
+        list = await CouchDatabase(db).read(CouchList(list), options)
 
     if list.hasFieldReference():
       list.transformList()
@@ -79,14 +79,14 @@ proc query*(db: BDatabase, listname: string, options: QueryOptions): Future[BLis
 
   result = list
 
-proc query*(dbd: DBDirector, dbname: string, listname: string, options: QueryOptions): Future[BList]  {.async.} =
+proc read*(dbd: DBDirector, dbname: string, listname: string, options: QueryOptions): Future[BList]  {.async.} =
   echo("db.query.DBDirector: " & listname)
   let db = dbd.getDBObj(dbname)
-  var list = await db.query(listname, options)
+  var list = await db.read(listname, options)
   result = list
 
 proc cacheList*(db: BDatabase, listname: string) =
-  var list = waitFor(db.query(listname, newQueryOptions()))
+  var list = waitFor(db.read(listname, newQueryOptions()))
   list.addResultToCache()
 
 proc registerList*(db: CouchDatabase, name: string, document: string, view: string, cacheResults = false): CouchList =
@@ -100,10 +100,10 @@ proc prefetchReferences*(db: BDatabase) =
     for fref in list.fieldrefs:
       db.cacheList(fref.reflist.name)
 
-proc insert*(db: CouchDatabase, listname: string, row: string): Future[string] {.async.} =
+proc create*(db: CouchDatabase, listname: string, row: string): Future[string] {.async.} =
   result = await db.client.put(db.name, row)
 
-proc insert*(db: BDatabase, listname: string, row: string): Future[string]  {.async.} =
+proc create*(db: BDatabase, listname: string, row: string): Future[string]  {.async.} =
   var list = db.getListObj(listname)
 
   #TODO
@@ -111,7 +111,7 @@ proc insert*(db: BDatabase, listname: string, row: string): Future[string]  {.as
   #  echo("cache hit")
 
   if(db of CouchDatabase):
-      result = await CouchDatabase(db).insert(listname, row)
+      result = await CouchDatabase(db).create(listname, row)
 
   if list.hasFieldReference():
     discard
@@ -122,9 +122,9 @@ proc insert*(db: BDatabase, listname: string, row: string): Future[string]  {.as
     #TODO
     #list.cacheOfResults[$options] = list.resultString
 
-proc insert*(dbd: DBDirector, dbname: string, listname: string, row: string): Future[string]  {.async.} =
+proc create*(dbd: DBDirector, dbname: string, listname: string, row: string): Future[string]  {.async.} =
   let db = dbd.getDBObj(dbname)
-  result = await db.insert(listname, row)
+  result = await db.create(listname, row)
 
 proc update*(db: CouchDatabase, listname: string, id: string, row: string): Future[string] {.async.} =
   result = await db.client.put(db.name, id, row)
