@@ -1,5 +1,5 @@
 import asynchttpserver, asyncdispatch
-import strutils, cgi
+import strutils, cgi, tables
 
 type
   HttpServer* = ref object
@@ -49,3 +49,11 @@ func parseURLQuery*(query: string): auto =
       rev = item.value
 
   result = (key: key, startkey: startkey, endkey: endkey, rev: rev)
+
+func parseURLQueryNew*(query: string): Table[string, string] =
+  var rtable = initTable[string, string]()
+
+  for item in decodeData(query):
+    rtable[item.key] = item.value
+
+  result = rtable

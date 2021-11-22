@@ -43,12 +43,26 @@ proc strQueryOptions(options: CouchQueryOptions): string =
 
   result = res
 
-#when using options(key, startkey, endkey) make sure to quote strings when type in CouchDB is a string
-#for example: key="Jupiter" in contrast to integers: key=1234
-proc queryView*(client: CouchClient, db: string, ddoc: string, view: string, options: CouchQueryOptions): Future[string] {.async.} =
+proc strQueryParameters(params: seq[(string, string)]): string =
+  var res: string
+
+  for i, v in params:
+    if len(v[0]) > 0 and len(v[1]) > 0:
+      if len(res) > 0: res.add("&")
+      res.add(v[0] & "=" & v[1])
+
+  if len(res) > 0:
+    res = "?" & res
+
+  result = res
+
+#when using query parameters(key, startkey, endkey, ...) make sure to quote strings when type in CouchDB is a string
+#for example: key="Jupiter" for a string in contrast to integers: key=1234
+proc queryView*(client: CouchClient, db: string, ddoc: string, view: string, params: seq[(string, string)]): Future[string] {.async.} =
   #http://188.166.48.211:5984/test/_design/authors/_view/authors-view
   var rstr = client.serveradr & "/" & db & "/_design/" & ddoc & "/_view/" & view
-  rstr.add(strQueryOptions(options))
+  #rstr.add(strQueryOptions(options))
+  rstr.add(strQueryParameters(params))
   echo("couch.query: " & rstr)
   try:
     result = await client.httpclient.getContent(rstr)

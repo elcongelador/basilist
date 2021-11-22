@@ -1,5 +1,5 @@
 import asynchttpserver, asyncdispatch
-import config, db, httpd, list
+import config, db, httpd, list, tables
 
 var dbd {.threadvar.}: DBDirector
 
@@ -12,14 +12,19 @@ proc serverCallback(req: Request) {.async.} =
   echo("--- REQUEST ---")
   let rpath = parseURLPath(req.url.path)
   echo(rpath)
+  let rquery = parseURLQueryNew(req.url.query)
 
   case req.reqMethod
   of HttpGet: #QUERY
     echo("GET")
-    let opts = parseURLQuery(req.url.query)
-    echo(opts)
-    let qopts = newQueryOptions(opts.key, opts.startkey, opts.endkey)
-    var reslist = await dbd.read(rpath.db, rpath.list, qopts)
+    #let opts = parseURLQuery(req.url.query)
+    #echo(opts)
+    #let qopts = newQueryOptions(opts.key, opts.startkey, opts.endkey)
+
+    #NEXT
+    #split rquery table into query name and seq of params here
+
+    var reslist = await dbd.read(rpath.db, rpath.list, rquery["query"], @[("key", "Herbert")])
 
     let headers = {
       "Content-type": "application/json; charset=utf-8"
@@ -48,6 +53,8 @@ proc serverCallback(req: Request) {.async.} =
     await req.respond(Http200, res, headers.newHttpHeaders(true))
   of HttpDelete: #DELETE
     echo("DELETE")
+    #TODO!
+    #use parseURLQuery new here (then remove old func parseURLquery)
     let opts = parseURLQuery(req.url.query)
     echo(opts)
     var res = await dbd.delete(rpath.db, rpath.list, rpath.id, opts.rev)
@@ -79,8 +86,8 @@ proc newAgent*(): Agent =
   dbperf.prefetchReferences()
 
   var dbtestsuite = dbd.registerCouchDB("testsuite", CONF_DB_SERVERADR, CONF_DB_USER, CONF_DB_PASSWORD)
-  discard dbtestsuite.registerList("authors", "authors", "key_name")
-  #authlist.registerQuery("view-key_name", (document: "authors", view: "key_name")
+  var authlist =  dbtestsuite.registerList("authors", "authors", "key_name")
+  authlist.registerQuery("view-key_name", (qtype: qtRead, document: "authors", view: "key_name"))
 
   ag.server = newHttpServer(CONF_SERVER_PORT, serverCallback)
   result = ag

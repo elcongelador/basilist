@@ -14,6 +14,7 @@ type
     resultString*: string #last result string
     fieldrefs*: seq[FieldReference]
     cacheIsValid*: bool
+    prefetchQuery*: string
     #TODO
     #insert options: auto-generate id or not
 
@@ -32,8 +33,12 @@ type
     reffield: string
 
   CouchQuery* = tuple
+    qtype: QueryType
     document: string
     view: string
+
+  QueryType* = enum
+    qtCreate, qtUpdate, qtRead, qtDelete
 
 proc newCouchList*(name: string, document: string, view: string, cachResults: bool): CouchList =
   var cl = CouchList()
@@ -45,10 +50,13 @@ proc newCouchList*(name: string, document: string, view: string, cachResults: bo
   cl.srcdoc = document
   cl.srcview = view
   cl.cacheOfRows = initTable[string, JsonNode]()
+  cl.queries = initTable[string, CouchQuery]()
   result = cl
 
-proc registerQuery*(list: CouchList, name: string, query: CouchQuery) =
+proc registerQuery*(list: CouchList, name: string, query: CouchQuery, isPrefetchQuery: bool = false) =
   list.queries[name] = query
+  if isPrefetchQuery:
+    list.prefetchQuery = name
 
 method resultToJson*(list: BList) {.base.} =
   #echo("BList.resultToJson")

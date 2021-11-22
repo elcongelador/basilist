@@ -55,38 +55,40 @@ proc getListObj*(db: BDatabase, listname: string): BList =
 
   result = db.lists[listname]
 
-proc read*(db: CouchDatabase, list: CouchList, options: QueryOptions): Future[BList] {.async.} =
+proc read*(db: CouchDatabase, list: CouchList, queryname: string, params: seq[(string, string)]): Future[BList] {.async.} =
   echo("db.query.CouchDatabase: " & list.name)
-  list.resultString = await db.client.queryView(db.name, list.srcdoc, list.srcview, options)
+  let query = list.queries[queryname]
+  list.resultString = await db.client.queryView(db.name, query.document, query.view, params)
   result = list
 
-proc read*(db: BDatabase, listname: string, options: QueryOptions): Future[BList]  {.async.} =
+proc read*(db: BDatabase, listname: string, queryname: string, params: seq[(string, string)] = @[]): Future[BList]  {.async.} =
   echo("db.query.BDatabase: " & listname)
   var list = db.getListObj(listname)
+  let cacheKey = listname & ":" & queryname & $params #TODO: check if this works
 
-  if list.doCacheResults and list.cacheOfResults.hasKey($options):
+  if list.doCacheResults and list.cacheOfResults.hasKey(cacheKey):
     echo("cache hit")
-    list.resultString = list.cacheOfResults[$options]
+    list.resultString = list.cacheOfResults[cacheKey]
   else:
     if(db of CouchDatabase):
-        list = await CouchDatabase(db).read(CouchList(list), options)
+        list = await CouchDatabase(db).read(CouchList(list), queryname, params)
 
     if list.hasFieldReference():
       list.transformList()
 
     if list.doCacheResults: #result was not in cache, so add it here
-      list.cacheOfResults[$options] = list.resultString
+      list.cacheOfResults[cacheKey] = list.resultString
 
   result = list
 
-proc read*(dbd: DBDirector, dbname: string, listname: string, options: QueryOptions): Future[BList]  {.async.} =
+proc read*(dbd: DBDirector, dbname: string, listname: string, queryname: string, params: seq[(string, string)] = @[]): Future[BList]  {.async.} =
   echo("db.query.DBDirector: " & listname)
   let db = dbd.getDBObj(dbname)
-  var list = await db.read(listname, options)
+  var list = await db.read(listname, queryname, params)
   result = list
 
-proc cacheList*(db: BDatabase, listname: string) =
-  var list = waitFor(db.read(listname, newQueryOptions()))
+proc cacheList*(db: BDatabase, list: BList) =
+  var list = waitFor(db.read(list.name, list.prefetchQuery))
   list.addResultToCache()
 
 proc registerList*(db: CouchDatabase, name: string, document: string, view: string, cacheResults = false): CouchList =
@@ -98,7 +100,7 @@ proc registerList*(db: CouchDatabase, name: string, document: string, view: stri
 proc prefetchReferences*(db: BDatabase) =
   for list in db.lists.values:
     for fref in list.fieldrefs:
-      db.cacheList(fref.reflist.name)
+      db.cacheList(fref.reflist)
 
 proc create*(db: CouchDatabase, listname: string, row: string): Future[string] {.async.} =
   result = await db.client.put(db.name, row)
