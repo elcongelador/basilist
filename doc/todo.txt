@@ -1,4 +1,5 @@
 #NEXT
+- db.nim, couch.nim: create own type for params of read procedures (now seq[(string, string)])
 
 #TODO
 - lists / couchdb: let user register different views for one list (db.nim: registerList)
