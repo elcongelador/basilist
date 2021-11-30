@@ -3,18 +3,9 @@ import asyncdispatch
 import oids
 
 type
-  CouchQueryOptions* = tuple
-    key: string
-    startkey: string
-    endkey: string
-
-type
   CouchClient* = ref object
     httpclient: AsyncHttpClient
     serveradr: string
-
-proc newCouchQueryOptions*(key = "", startkey = "", endkey = ""): CouchQueryOptions =
-  result = (key: key, startkey: startkey, endkey: endkey)
 
 proc newCouchClient*(serveradr: string, user: string, password: string): CouchClient =
   var client = CouchClient()
