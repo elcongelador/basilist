@@ -24,25 +24,6 @@ proc newCouchClient*(serveradr: string, user: string, password: string): CouchCl
   client.httpclient.headers = newHttpHeaders({ "Authorization": "Basic " & encoded })
   result = client
 
-proc strQueryOptions(options: CouchQueryOptions): string =
-  var res: string
-
-  if len(options.key) > 0:
-    res.add("key=" & options.key)
-
-  if len(options.startkey) > 0:
-    if len(res) > 0: res.add("&")
-    res.add("startkey=" & options.startkey)
-
-  if len(options.endkey) > 0:
-    if len(res) > 0: res.add("&")
-    res.add("endkey=" & options.endkey)
-
-  if len(res) > 0:
-    res = "?" & res
-
-  result = res
-
 proc strQueryParameters(params: seq[(string, string)]): string =
   var res: string
 
@@ -61,7 +42,6 @@ proc strQueryParameters(params: seq[(string, string)]): string =
 proc queryView*(client: CouchClient, db: string, ddoc: string, view: string, params: seq[(string, string)]): Future[string] {.async.} =
   #http://188.166.48.211:5984/test/_design/authors/_view/authors-view
   var rstr = client.serveradr & "/" & db & "/_design/" & ddoc & "/_view/" & view
-  #rstr.add(strQueryOptions(options))
   rstr.add(strQueryParameters(params))
   echo("couch.query: " & rstr)
   try:

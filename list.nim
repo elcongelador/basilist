@@ -14,13 +14,13 @@ type
     resultString*: string #last result string
     fieldrefs*: seq[FieldReference]
     cacheIsValid*: bool
-    prefetchQuery*: string
+    prefetchQuery*: string #name of query used for prefetching
+    queries*: Table[string, BQuery]
     #TODO
     #insert options: auto-generate id or not
 
   CouchList* = ref object of BList
-    #queries*: Table[string, tuple[document: string, view: string]]
-    queries*: Table[string, CouchQuery]
+    #queries*: Table[string, CouchQuery]
     srcdoc*: string
     srcview*: string
 
@@ -32,10 +32,18 @@ type
     reflist: BList
     reffield: string
 
-  CouchQuery* = tuple
-    qtype: QueryType
-    document: string
-    view: string
+  #CouchQuery* = tuple
+  #  qtype: QueryType
+  #  document: string
+  #  view: string
+
+  BQuery* = ref object of RootObj
+    name*: string
+    qtype*: QueryType
+
+  CouchQuery* = ref object of BQuery
+    document*: string
+    view*: string
 
   QueryType* = enum
     qtCreate, qtUpdate, qtRead, qtDelete
@@ -50,13 +58,13 @@ proc newCouchList*(name: string, document: string, view: string, cachResults: bo
   cl.srcdoc = document
   cl.srcview = view
   cl.cacheOfRows = initTable[string, JsonNode]()
-  cl.queries = initTable[string, CouchQuery]()
+  cl.queries = initTable[string, BQuery]()
   result = cl
 
-proc registerQuery*(list: CouchList, name: string, query: CouchQuery, isPrefetchQuery: bool = false) =
-  list.queries[name] = query
+proc registerQuery*(list: CouchList, query: BQuery, isPrefetchQuery: bool = false) =
+  list.queries[query.name] = query
   if isPrefetchQuery:
-    list.prefetchQuery = name
+    list.prefetchQuery = query.name
 
 method resultToJson*(list: BList) {.base.} =
   #echo("BList.resultToJson")

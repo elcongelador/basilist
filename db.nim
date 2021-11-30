@@ -49,21 +49,25 @@ proc getListObj*(dbd: DBDirector, dbname: string, listname: string): BList =
 
 proc getListObj*(db: BDatabase, listname: string): BList =
   echo("db.getListObj: " & listname)
-  echo("keys: ")
-  for k in db.lists.keys:
-    echo k
+
+  if not db.lists.hasKey(listname):
+    raise newException(KeyError, "list " & listname & " not found for DB " & db.name)
 
   result = db.lists[listname]
 
 proc read*(db: CouchDatabase, list: CouchList, queryname: string, params: seq[(string, string)]): Future[BList] {.async.} =
   echo("db.query.CouchDatabase: " & list.name)
   let query = list.queries[queryname]
-  list.resultString = await db.client.queryView(db.name, query.document, query.view, params)
+  list.resultString = await db.client.queryView(db.name, CouchQuery(query).document, CouchQuery(query).view, params)
   result = list
 
 proc read*(db: BDatabase, listname: string, queryname: string, params: seq[(string, string)] = @[]): Future[BList]  {.async.} =
   echo("db.query.BDatabase: " & listname)
   var list = db.getListObj(listname)
+
+  if not list.queries.hasKey(queryname):
+    raise newException(KeyError, "query " & queryname & " not found for list " & list.name)
+
   let cacheKey = listname & ":" & queryname & $params #TODO: check if this works
 
   if list.doCacheResults and list.cacheOfResults.hasKey(cacheKey):

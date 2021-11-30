@@ -35,22 +35,7 @@ func parseURLPath*(url: string): auto =
 
   result = (db: parts[1], list: parts[2], id: id)
 
-func parseURLQuery*(query: string): auto =
-  var key, startkey, endkey, rev: string
-
-  for item in decodeData(query):
-    if(item.key == "key"):
-      key = item.value
-    elif(item.key == "startkey"):
-      startkey = item.value
-    elif(item.key == "endkey"):
-      endkey = item.value
-    elif(item.key == "rev"):
-      rev = item.value
-
-  result = (key: key, startkey: startkey, endkey: endkey, rev: rev)
-
-func parseURLQueryNew*(query: string): Table[string, string] =
+func parseURLQuery*(query: string): Table[string, string] =
   var rtable = initTable[string, string]()
 
   for item in decodeData(query):
