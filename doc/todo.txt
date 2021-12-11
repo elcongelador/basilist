@@ -17,3 +17,12 @@ can be tested with malformed json data for inserts / updates (for examples use s
 #NOTES
 - strange: order of functions in file db.nim (three versions of each query / insert / update / delete) is important,
 with the wrong order we run into recursive calls between them
+
+#MISSION
+- basilist is a light-weight database abstraction layer, making db access convenient and hassle-free
+- what it is not: an ORM (you bring your own queries - and objects if you need them)
+- works with both SQL and NOSQL databases (currently: PostgreSQL, SQLite, CouchDB)
+- it is able to cross-reference and populate fields among different lists (=tables in SQL lingo, documents in NOSQL stores); even different
+databaes (mixing SQL and NOSQL)
+- this is useful to achieve relational like querying functionality for document stores, which is otherwise cumbersome
+- basic but robust caching
